@@ -61,7 +61,7 @@ def extractActivities(response):
 
 def writeToBigQuery(clientId, activities):
   for activity in activities:
-    pageViews = ""
+    pageViews = ",".join(map(lambda p : '"' + p + '"', activity['pageview']['pagePath']))
     queryJob = bq.query(f"""
     INSERT INTO `fuzzylabs.analytics.test` values (
     "{clientId}",
@@ -73,7 +73,7 @@ def writeToBigQuery(clientId, activities):
     "{activity['keyword']}",
     "{activity['landingPagePath']}",
     "{activity['medium']}",
-    [{pageViews}],
+    ARRAY [{pageViews}],
     "{activity['source']}")
     """)
 
