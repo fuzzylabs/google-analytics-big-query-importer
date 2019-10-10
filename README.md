@@ -39,4 +39,22 @@ TODO - describe how we use Google IAM to auth with Analytics and BQ
 
 ### Usage
 
-TODO
+When running for the first time, it's necessary to set up the Python virtualenv and install dependencies:
+
+```
+virtualenv env
+source env/bin/activate
+pip install -r requirements.txt
+```
+
+You'll also need to set the `GOOGLE_APPLICATION_CREDENTIALS` environment variable to the location of the key JSON corresponding to the service account which you set up in `Authentication`. For example:
+
+```
+export set GOOGLE_APPLICATION_CREDENTIALS=/home/<you>/.keys/ga-service-account.json
+```
+
+To run the script:
+
+```
+python analytics.py -v <your view ID> -d <target Big Query dataset> -p <Google Cloud project name>
+```
