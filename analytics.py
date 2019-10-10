@@ -2,12 +2,14 @@ import os
 import pprint
 from argparse import ArgumentParser
 from apiclient.discovery import build
+from google.cloud import bigquery
 from oauth2client.service_account import ServiceAccountCredentials
 
 SCOPES = ['https://www.googleapis.com/auth/analytics.readonly']
 KEY_FILE_LOCATION = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
 
 pp = pprint.PrettyPrinter(indent=2)
+bq = bigquery.Client()
 
 def initializeAnalyticsReporting():
   credentials = ServiceAccountCredentials.from_json_keyfile_name(KEY_FILE_LOCATION, SCOPES)
@@ -57,16 +59,39 @@ def extractActivities(response):
       activities.append(activity)
   return activities
 
+def writeToBigQuery(clientId, activities):
+  for activity in activities:
+    pageViews = ""
+    queryJob = bq.query(f"""
+    INSERT INTO `fuzzylabs.analytics.test` values (
+    "{clientId}",
+    "{activity['activityTime']}",
+    "{activity['activityType']}",
+    "{activity['campaign']}",
+    "{activity['channelGrouping']}",
+    "{activity['hostname']}",
+    "{activity['keyword']}",
+    "{activity['landingPagePath']}",
+    "{activity['medium']}",
+    [{pageViews}],
+    "{activity['source']}")
+    """)
+
+  results = queryJob.result()
+  print(f"Big query write result {results}")
+
 def main(viewId, dateRange):
   analytics = initializeAnalyticsReporting()
   sessions = getSessionsByClientId(analytics, viewId, dateRange)
   clientIds = extractClientIds(sessions)
 
   for clientId in clientIds:
-    activity = getUserActivity(analytics, viewId, clientId, dateRange)
-    print("Client: " + clientId)
-    print("-------------------")
-    pp.pprint(extractActivities(activity))
+   activities = extractActivities(getUserActivity(analytics, viewId, clientId, dateRange))
+   print("Client: " + clientId)
+   print("-------------------")
+   pp.pprint(activities)
+   writeToBigQuery(clientId, activities)
+   break
 
 if __name__ == '__main__':
   parser = ArgumentParser()
