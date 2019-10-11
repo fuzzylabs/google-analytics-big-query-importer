@@ -59,11 +59,10 @@ def extractActivities(response):
       activities.append(activity)
   return activities
 
-def writeToBigQuery(clientId, activities):
+def generateInserts(clientId, activities):
+  inserts = []
   for activity in activities:
-    pageViews = ",".join(map(lambda p : '"' + p + '"', activity['pageview']['pagePath']))
-    queryJob = bq.query(f"""
-    INSERT INTO `fuzzylabs.analytics.test` values (
+    inserts.append(f"""(
     "{clientId}",
     "{activity['activityTime']}",
     "{activity['activityType']}",
@@ -73,25 +72,26 @@ def writeToBigQuery(clientId, activities):
     "{activity['keyword']}",
     "{activity['landingPagePath']}",
     "{activity['medium']}",
-    ARRAY [{pageViews}],
+    ["{activity['pageview']['pagePath']}"],
     "{activity['source']}")
     """)
-
-  results = queryJob.result()
-  print(f"Big query write result {results}")
+  return inserts
 
 def main(viewId, dateRange):
   analytics = initializeAnalyticsReporting()
   sessions = getSessionsByClientId(analytics, viewId, dateRange)
   clientIds = extractClientIds(sessions)
 
+  inserts = []
   for clientId in clientIds:
-   activities = extractActivities(getUserActivity(analytics, viewId, clientId, dateRange))
-   print("Client: " + clientId)
-   print("-------------------")
-   pp.pprint(activities)
-   writeToBigQuery(clientId, activities)
-   break
+    activities = extractActivities(getUserActivity(analytics, viewId, clientId, dateRange))
+    print("Client: " + clientId)
+    print("-------------------")
+    pp.pprint(activities)
+    inserts.extend(generateInserts(clientId, activities))
+  print("Inserting data into BigQuery")
+  queryJob = bq.query("INSERT INTO `fuzzylabs.analytics.test` values " + ",".join(inserts))
+  results = queryJob.result()
 
 if __name__ == '__main__':
   parser = ArgumentParser()
