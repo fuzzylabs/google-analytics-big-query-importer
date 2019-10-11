@@ -58,3 +58,13 @@ To run the script:
 ```
 python analytics.py -v <your view ID> -d <target Big Query dataset> -p <Google Cloud project name>
 ```
+
+A Dockerfile is also provided if you would prefer to run this in a container:
+
+```
+docker build -t ga_bq_importer .
+docker run \
+         -e GOOGLE_APPLICATION_CREDENTIALS=/tmp/keys/gcloud_creds.json \
+         -v $GOOGLE_APPLICATION_CREDENTIALS:/tmp/keys/gcloud_creds.json:ro \
+         ga_bq_importer -v <your view ID> -d <target Big Query dataset> -p <Google Cloud project name>
+```
