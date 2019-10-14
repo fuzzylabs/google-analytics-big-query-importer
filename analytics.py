@@ -77,10 +77,30 @@ def generateInserts(clientId, activities):
     """)
   return inserts
 
-def main(viewId, dateRange):
+def createTable(table):
+  query = f"""CREATE TABLE `{table}` (
+  client_id STRING NOT NULL,
+  activity_time STRING,
+  activity_type STRING,
+  campaign STRING,
+  channel_grouping STRING,
+  hostname STRING,
+  keyword STRING,
+  landing_page STRING,
+  medium STRING,
+  page_view ARRAY<STRING>,
+  source STRING)
+  """
+  r = bq.query(query)
+  print(r.result())
+
+def main(viewId, table, dateRange):
   analytics = initializeAnalyticsReporting()
   sessions = getSessionsByClientId(analytics, viewId, dateRange)
   clientIds = extractClientIds(sessions)
+
+  print(f"Creating table {table}")
+  createTable(table)
 
   inserts = []
   for clientId in clientIds:
@@ -90,11 +110,12 @@ def main(viewId, dateRange):
     pp.pprint(activities)
     inserts.extend(generateInserts(clientId, activities))
   print("Inserting data into BigQuery")
-  queryJob = bq.query("INSERT INTO `fuzzylabs.analytics.test` values " + ",".join(inserts))
+  queryJob = bq.query("INSERT INTO `" + table + "` values " + ",".join(inserts))
   results = queryJob.result()
 
 if __name__ == '__main__':
   parser = ArgumentParser()
   parser.add_argument("-v", "--view", dest="viewId", help="Get analytics from view ID", required=True)
+  parser.add_argument("-t", "--table", dest="table", help="The destination table in which to save the analytics data, using a fully-qualified path of the form <organisation>.<dataset>.<table-name>. This table will be created and should not already exist", required=True)
   args = parser.parse_args()
-  main(args.viewId, {'startDate': '7daysAgo', 'endDate': 'today'})
+  main(args.viewId, args.table, {'startDate': '7daysAgo', 'endDate': 'today'})

@@ -56,8 +56,10 @@ export set GOOGLE_APPLICATION_CREDENTIALS=/home/<you>/.keys/ga-service-account.j
 To run the script:
 
 ```
-python analytics.py -v <your view ID> -d <target Big Query dataset> -p <Google Cloud project name>
+python analytics.py -v <your view ID> -t <destination big query table>
 ```
+
+The destination BigQuery table will be created, and it should not already exist. It should be a fully-qualified path of the form `<project id>.<dataset id>.<table id>`; for example `fuzzylabs.analytics.test`.
 
 A Dockerfile is also provided if you would prefer to run this in a container:
 
