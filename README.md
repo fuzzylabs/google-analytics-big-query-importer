@@ -68,5 +68,5 @@ docker build -t ga_bq_importer .
 docker run \
          -e GOOGLE_APPLICATION_CREDENTIALS=/tmp/keys/gcloud_creds.json \
          -v $GOOGLE_APPLICATION_CREDENTIALS:/tmp/keys/gcloud_creds.json:ro \
-         ga_bq_importer -v <your view ID> -d <target Big Query dataset> -p <Google Cloud project name>
+         ga_bq_importer -v <your view ID> -t <destination big query table>
 ```
